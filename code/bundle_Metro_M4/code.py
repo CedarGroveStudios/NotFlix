@@ -150,9 +150,11 @@ else:
     pixel[0] = (0, 0, 0)
 
 while True:
-    pixel[0] = (16, 0, 0)
+    pix = random.randrange(0, NUM_PIXELS - 1)
+    pixel[pix] = (16, 0, 0)
     status_pixel[0] = (16, 0, 0)
-    time.sleep(10)
-    pixel[0] = (16, 0, 16)
+    time.sleep(4)
+    pixel[pix] = (16, 0, 16)
     status_pixel[0] = (16, 0, 16)
-    time.sleep(0.5)
+    time.sleep(1)
+    pixel[pix] = (0, 0, 0)
