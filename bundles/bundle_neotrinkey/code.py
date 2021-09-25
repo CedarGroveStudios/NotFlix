@@ -1,12 +1,11 @@
-# notflix_v01_NeoTrinkey.py
+# notflix_v02_NeoTrinkey.py
 # from the original 2016-05-12 Arduino version by Phillip Burgess
-# 2021-06-28 converted to CircuitPython by Cedar Grove Studios
+# 2021-09-25 converted to CircuitPython by Cedar Grove Studios
 
 import time
 import random
 import board
 import touchio
-from adafruit_simplemath import map_range
 import neopixel
 from gamma8 import gamma8
 
@@ -14,11 +13,26 @@ NUM_PIXELS = 4  # Number of NeoPixels in array
 DURATION = 2  # Play the movie for DURATION hours
 
 pixel = neopixel.NeoPixel(board.NEOPIXEL, NUM_PIXELS)
-pixel.fill((0, 0, 0))  # Clear NeoPixels
+pixel.fill((0,0,0))  # Clear NeoPixels
 pixel.brightness = 1  # Set initial brightness if no control input
 
 touch_1 = touchio.TouchIn(board.TOUCH1)
 touch_2 = touchio.TouchIn(board.TOUCH2)
+
+def map_range(x, in_min, in_max, out_min, out_max):
+    in_range = in_max - in_min
+    in_delta = x - in_min
+    if in_range != 0:
+        mapped = in_delta / in_range
+    elif in_delta != 0:
+        mapped = in_delta
+    else:
+        mapped = 0.5
+    mapped *= out_max - out_min
+    mapped += out_min
+    if out_min <= out_max:
+        return max(min(mapped, out_max), out_min)
+    return min(max(mapped, out_max), out_min)
 
 prev_red = new_red = 0
 prev_grn = new_grn = 0
@@ -35,7 +49,7 @@ while play_movie:
             print("start of colors table found")
             time.sleep(1)
         elif play_movie and ("};" in line):
-            data_file.close()  # End of data_file; close and exit "for" loop
+            data_file.close()  # end of data_file; close and exit "for" loop
             break
         elif play_movie:
             fields = line.split(",")
@@ -68,9 +82,15 @@ while play_movie:
 
                     if fade_time:
                         # 16-bit interpolation
-                        red = int(map_range(elapsed, 0, fade_time, prev_red, new_red))
-                        grn = int(map_range(elapsed, 0, fade_time, prev_grn, new_grn))
-                        blu = int(map_range(elapsed, 0, fade_time, prev_blu, new_blu))
+                        red = int(
+                            map_range(elapsed, 0, fade_time, prev_red, new_red)
+                        )
+                        grn = int(
+                            map_range(elapsed, 0, fade_time, prev_grn, new_grn)
+                        )
+                        blu = int(
+                            map_range(elapsed, 0, fade_time, prev_blu, new_blu)
+                        )
 
                     for i in range(0, NUM_PIXELS):
                         # Quantize to 8-bit
@@ -87,9 +107,7 @@ while play_movie:
                         if (blu_8 < 255) and ((blu & 0xFF) >= pixel_fraction):
                             blu_8 += 1
                         pixel[i] = (red_8, grn_8, blu_8)
-                        if time.monotonic() - t0 >= (
-                            DURATION * 60 * 60
-                        ):  # play for DURATION hours
+                        if time.monotonic() - t0 >= (DURATION * 60 * 60):  # play for DURATION hours
                             play_movie = False
                     if elapsed >= fade_time:  # End scene
                         break
@@ -110,13 +128,7 @@ while play_movie:
             break
     print("End of colors table")
     print("Time:", round((time.monotonic() - t1) / 60, 1), "min")
-    print(
-        "Movie:",
-        round((time.monotonic() - t0) / 60, 1),
-        "min",
-        round((time.monotonic() - t0) / 60 / 60, 1),
-        "hrs",
-    )
+    print("Movie:", round((time.monotonic() - t0) / 60, 1), "min", round((time.monotonic() - t0) / 60 / 60, 1), "hrs")
 
 print("End of movie")
 data_file.close()  # housekeeping: close data_file
